@@ -1,57 +1,83 @@
+/**
+ * HacksViaXtern API
+ * Author: Chris McDonald
+ */
+
+/**
+ * Dependencies
+ */
+var bodyParser = require('body-parser');
+var cors = require("cors");
+var errorhandler = require('errorhandler');
 var express = require('express');
+var methodOverride = require('method-override');
+var mongoose = require('mongoose');
+var multer = require('multer');
+
+/**
+ * Temporary views to visualize the API data
+ */
+var handlebars = require('express-handlebars')
+.create({ defaultLayout:'main' });
+
+/**
+ * Mongoose ORM for MongoDB
+ */
+mongoose.connect('mongodb://localhost/myIPS')
+
 var app = express();
 
-var bodyParser = require('body-parser');
-var multer = require('multer'); 
-var handlebars = require('express-handlebars')
-        .create({ defaultLayout:'main' });
+/**
+ * Temporary views to visualize the API data
+ */
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
-app.set('port', process.env.PORT || 3000);
 
+app.use(cors());
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
-app.use(multer()); // for parsing multipart/form-data
+app.use(errorhandler());
 app.use(express.static(__dirname + '/static'));
+app.use(multer()); // for parsing multipart/form-data
 
-var fortunes = [
-        "Conquer your fears or they will conquer you.",
-        "Rivers need springs.",
-        "Do not fear what you don't know.",
-        "You will have a pleasant surprise.",
-        "Whenever possible, keep it simple.",
-];
+/**
+ * Handle PUT & DELETE requests from forms with a POST method
+ */
+app.use(methodOverride(function(req) {
+    if (req.body && typeof req.body === 'object' && '_method' in req.body) {
+        var method = req.body._method
+        delete req.body._method
+        return method
+    }
+}))
 
-app.get('/', function(req, res){
-        // res.type('text/plain');
-        // res.send('Get a cup of coffee');
-        res.render('home');
-});
+/**
+ * Set the routes used by the API
+ */
+var claim = require('./routes/claim');
+var tracking = require('./routes/tracking');
+var user = require('./routes/user');
 
-app.get('/about', function(req, res){
-        var randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
-        res.render('about', { fortune: randomFortune });
-});
+/**
+ * Use the set routes
+ */
+app.use('/claim', claim);
+app.use('/tracking', tracking);
+app.use('/user', user);
 
-app.post('/fortunes', function(req, res){
-       f = JSON.parse(JSON.stringify(req.body, null, 2))['fortune'];
-       // console.log('adding fortune: ' + f);
-       fortunes[fortunes.length] = f;
-       res.render('fortunes', { fortunes: fortunes });
-});
-
-app.use(function(req, res, next){
+/**
+ * Handle 404 & 500 errors
+ */
+app.use(function(err, req, res){
         res.status(404);
-        res.render('404');
-});
+        res.send("404 NOT FOUND");
+        if(err) throw err;
+        });
 
-app.use(function(err, req, res, next){
-        console.error(err.stack);
+app.use(function(err, req, res){
         res.status(500);
-        res.render('500');
-});
+        res.send("500 SERVER ERROR");
+        if(err) throw err;
+        });
 
-app.listen(app.get('port'), function(){
-        console.log( 'Express started on http://localhost:' +
-                     app.get('port') + '; press Ctrl-C to terminate.' );
-});
+module.exports = app;
