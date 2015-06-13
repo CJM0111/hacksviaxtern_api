@@ -4,7 +4,7 @@
 var mongoose = require('mongoose');
 
 var claimSchema = new mongoose.Schema({
-    user_name:String,
+    user_name: String,
     claim_id: Number,
     claim_status: String,
     claim_title: String,
@@ -19,7 +19,8 @@ var claimSchema = new mongoose.Schema({
     to_coordinate: String,
     from_location: String,
     to_location: String,
-    miles_traveled: Number
+    miles_traveled: Number,
+    time_stamp: String
 });
 
 module.exports = mongoose.model('Claim', claimSchema, 'Claim');

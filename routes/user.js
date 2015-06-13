@@ -14,7 +14,6 @@ var User = require('../models/User.js');
  * Validate user
  */
 router.post('/login', function(req, res) {
-    console.log(req);
     User.find({user_name: req.body.user_name}, 'user_name password', function (err, user_data) {
         if (err) throw err;
         if (user_data.length) {
@@ -37,7 +36,7 @@ router.post('/login', function(req, res) {
  * Return all users
  */
 router.get('/', function(req, res) {
-    User.find({}, 'user_id user_name first_name last_name', function (err, user_data) {
+    User.find({}, 'user_name first_name last_name job_title', function (err, user_data) {
         if(err) throw err;
         res.send(user_data);
     });
@@ -48,7 +47,7 @@ router.get('/', function(req, res) {
  * Return a user by 'user_name'
  */
 router.get('/:username', function(req, res) {
-    User.find({user_name: req.params.username}, function(err, user_data) {
+    User.find({user_name: req.params.username}, 'user_name first_name last_name job_title', function(err, user_data) {
         if(err) throw err;
         res.send(user_data);
     });
@@ -59,9 +58,24 @@ router.get('/:username', function(req, res) {
  * Add a new user
  */
 router.post('/new', function(req, res) {
-    User.create(req.body, function (err, user_data) {
-        if(err) throw err;
-        res.send(user_data);
+    var date = new Date();
+    User.find({user_name: req.body.user_name}, 'user_name first_name last_name job_title', function(err, user_data){
+       if (err) throw err;
+       if(user_data == ""){
+           User.create({
+               user_name:req.body.user_name,
+               password: req.body.password,
+               first_name: req.body.first_name,
+               last_name: req.body.last_name,
+               job_title: req.body.job_title,
+               time_stamp: date.getTime()
+           }, function (err, user_data) {
+               if(err) throw err;
+               res.send(user_data);
+           });
+       } else {
+           res.send("Username already exists...please use a different one");
+       }
     });
 });
 
@@ -70,7 +84,19 @@ router.post('/new', function(req, res) {
  * Update an existing user
  */
 router.post('/update', function(req, res) {
-    User.update({user_id: req.body.user_id}, {user_name: req.body.user_name, first_name: req.body.user_name, last_name: req.body.last_name}, function(err, user_data) {
+    User.update({user_name: req.body.user_name}, {first_name: req.body.first_name, last_name: req.body.last_name, job_title: req.body.job_title}, function(err, user_data) {
+        if(err) throw err;
+        res.send(user_data);
+    });
+});
+
+/**
+ * HTTP POST: /user/update/password
+ * Update an existing user's password
+ */
+router.post('/update/password', function(req, res) {
+    console.log("PASSWORD");
+    User.update({user_name: req.body.user_name}, {password: req.body.password}, function(err, user_data) {
         if(err) throw err;
         res.send(user_data);
     });
