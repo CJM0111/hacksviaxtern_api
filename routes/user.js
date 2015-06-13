@@ -2,7 +2,7 @@
  * Dependencies
  */
 var express = require('express');
-var hash = require('../crypto').hash;
+var hash = require('../auth/crypto').hash;
 var router = express.Router();
 
 /**
@@ -11,10 +11,10 @@ var router = express.Router();
 var User = require('../models/User.js');
 
 /**
- * HTTP POSt: /user/login
+ * HTTP POST: /user/login
  * Validate user
  */
-router.post('/log', function(req, res) {
+router.post('/bad_login', function(req, res) {
     User.find({user_name: req.body.user_name}, 'user_name password', function (err, user_data) {
         if (err) throw err;
         if (user_data.length) {
@@ -29,61 +29,6 @@ router.post('/log', function(req, res) {
             res.send("Invalid username or password");
         }
         console.log("Password: " + user_data[0].password);
-    });
-});
-
-function authenticate(name, pass, fn) {
-    if (!module.parent) console.log('authenticating %s:%s', name, pass);
-    console.log("authenticating...");
-    User.find({user_name: name}, 'user_name hash salt', function(err, user_data) {
-        if(err) throw err;
-        console.log(name);
-        console.log(user_data[0].user_name);
-        if (!user_data[0].user_name) {
-            return fn(new Error('Cannot find user...'));
-        }
-        else{
-            console.log("else");
-            console.log(user_data[0].hash.toString('base64'));
-            hash(pass, user_data[0].salt, function(err, hash){
-                if (err) return fn(err);
-                console.log(hash.toString('base64'));
-                if (hash.toString('base64') == user_data[0].hash.toString('base64')) return fn(null, user_data);
-                fn(new Error('Invalid password...'));
-            })
-        }
-    });
-
-}
-
-router.post('/login', function(req, res){
-    console.log("login...");
-    console.log(req.body.user_name);
-    authenticate(req.body.user_name, req.body.password, function(err, user){
-        console.log(user);
-        if (user) {
-            // Regenerate session when signing in
-            // to prevent fixation
-            req.session.regenerate(function(){
-                // Store the user's primary key
-                // in the session store to be retrieved,
-                // or in this case the entire user object
-                req.session.user = user;
-                req.session.success = 'Authenticated as ' + user.user_name;
-                res.send("Success");
-            });
-        } else {
-            req.session.error = 'Authentication failed, please check your '
-            + ' username and password.'
-            + ' (use "tj" and "foobar")';
-            res.send("Failure");
-        }
-    });
-});
-
-router.get('/logout', function(req, res){
-    req.session.destroy(function(){
-        res.send('Logged out...');
     });
 });
 
@@ -115,12 +60,6 @@ router.get('/:user_name', function(req, res) {
  */
 router.post('/new', function(req, res) {
     var date = new Date();
-    console.log(req.body.password);
-
-    //var type1 = typeof hash_value;
-    //var type2 = typeof salt_value;
-    //console.log(type1);
-    //console.log(type2);
     hash(req.body.password, function(err, salt, hash) {
         User.find({user_name: req.body.user_name}, 'user_name first_name last_name job_title', function (err, user_data) {
             if (err) throw err;
@@ -138,7 +77,7 @@ router.post('/new', function(req, res) {
                     res.send(user_data);
                 });
             } else {
-                res.send("Username already exists...please use a different one");
+                res.send("Username already exists...");
             }
         });
     });
@@ -172,6 +111,58 @@ router.post('/update/password', function(req, res) {
     })}, function(err, user_data) {
         if(err) throw err;
         res.send(user_data);
+    });
+});
+
+/**
+ * Method for Authentication
+ * Uses 'crypto.js' for encryption & decryption
+ */
+function authenticate(user_name, password, func) {
+    console.log('Authenticating %s:%s', user_name, password);
+    User.find({user_name: user_name}, 'user_name hash salt', function(err, user_data) {
+        if(err) return err;
+        if (!user_data[0].user_name) {
+            return func(new Error('User not found...'));
+        }
+        else{
+            hash(password, user_data[0].salt, function(err, hash){
+                if (err) return func(err);
+                if (hash.toString('base64') == user_data[0].hash.toString('base64')) return func(null, user_data);
+                func(new Error('Invalid password...'));
+            })
+        }
+    });
+}
+
+/**
+ * HTTP POST: /user/login
+ * Login w/ 'user_name' & 'password' & Authenticate
+ */
+router.post('/login', function(req, res){
+    authenticate(req.body.user_name, req.body.password, function(err, user){
+        if (user) {
+            req.session.regenerate(function(){
+                req.session.user = user;
+                req.session.success = 'Access Granted as: ' + user.user_name;
+                res.send("Login Successful");
+            });
+        } else {
+            console.log("else");
+            req.session.error = 'Access Denied.';
+            res.send("Login Unsuccessful");
+        }
+    });
+});
+
+/**
+ * HTTP GET: /user/logout
+ * Logout by destroying the current session
+ */
+router.get('/logout', function(err, req, res){
+    if (err) throw err;
+    req.session.destroy(function(){
+        res.send('Logged out...');
     });
 });
 
