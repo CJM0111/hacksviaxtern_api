@@ -7,12 +7,14 @@
  * Dependencies
  */
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
 var cors = require("cors");
 var errorhandler = require('errorhandler');
 var express = require('express');
 var methodOverride = require('method-override');
 var mongoose = require('mongoose');
 var multer = require('multer');
+var expressSession = require('express-session');
 
 /**
  * Temporary views to visualize the API data
@@ -33,10 +35,13 @@ var app = express();
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-app.use(cors());
+
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+app.use(cookieParser('secret'));
+app.use(cors());
 app.use(errorhandler());
+app.use(expressSession());
 app.use(express.static(__dirname + '/static'));
 app.use(multer()); // for parsing multipart/form-data
 
@@ -50,6 +55,20 @@ app.use(methodOverride(function(req) {
         return method
     }
 }))
+
+/**
+ * Authentication
+ */
+app.use(function(req, res, next){
+    var err = req.session.error
+    var msg = req.session.success;
+    delete req.session.error;
+    delete req.session.success;
+    res.locals.message = '';
+    if (err) res.locals.message = 'Error: ' + err;
+    if (msg) res.locals.message = 'Success: ' + msg;
+    next();
+});
 
 /**
  * Set the routes used by the API

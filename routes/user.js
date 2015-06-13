@@ -2,6 +2,7 @@
  * Dependencies
  */
 var express = require('express');
+var hash = require('../crypto').hash;
 var router = express.Router();
 
 /**
@@ -10,10 +11,10 @@ var router = express.Router();
 var User = require('../models/User.js');
 
 /**
- * HTTP GET: /user/login
+ * HTTP POSt: /user/login
  * Validate user
  */
-router.post('/login', function(req, res) {
+router.post('/log', function(req, res) {
     User.find({user_name: req.body.user_name}, 'user_name password', function (err, user_data) {
         if (err) throw err;
         if (user_data.length) {
@@ -28,6 +29,61 @@ router.post('/login', function(req, res) {
             res.send("Invalid username or password");
         }
         console.log("Password: " + user_data[0].password);
+    });
+});
+
+function authenticate(name, pass, fn) {
+    if (!module.parent) console.log('authenticating %s:%s', name, pass);
+    console.log("authenticating...");
+    User.find({user_name: name}, 'user_name hash salt', function(err, user_data) {
+        if(err) throw err;
+        console.log(name);
+        console.log(user_data[0].user_name);
+        if (!user_data[0].user_name) {
+            return fn(new Error('Cannot find user...'));
+        }
+        else{
+            console.log("else");
+            console.log(user_data[0].hash.toString('base64'));
+            hash(pass, user_data[0].salt, function(err, hash){
+                if (err) return fn(err);
+                console.log(hash.toString('base64'));
+                if (hash.toString('base64') == user_data[0].hash.toString('base64')) return fn(null, user_data);
+                fn(new Error('Invalid password...'));
+            })
+        }
+    });
+
+}
+
+router.post('/login', function(req, res){
+    console.log("login...");
+    console.log(req.body.user_name);
+    authenticate(req.body.user_name, req.body.password, function(err, user){
+        console.log(user);
+        if (user) {
+            // Regenerate session when signing in
+            // to prevent fixation
+            req.session.regenerate(function(){
+                // Store the user's primary key
+                // in the session store to be retrieved,
+                // or in this case the entire user object
+                req.session.user = user;
+                req.session.success = 'Authenticated as ' + user.user_name;
+                res.send("Success");
+            });
+        } else {
+            req.session.error = 'Authentication failed, please check your '
+            + ' username and password.'
+            + ' (use "tj" and "foobar")';
+            res.send("Failure");
+        }
+    });
+});
+
+router.get('/logout', function(req, res){
+    req.session.destroy(function(){
+        res.send('Logged out...');
     });
 });
 
@@ -59,23 +115,32 @@ router.get('/:user_name', function(req, res) {
  */
 router.post('/new', function(req, res) {
     var date = new Date();
-    User.find({user_name: req.body.user_name}, 'user_name first_name last_name job_title', function(err, user_data){
-       if (err) throw err;
-       if(user_data == ""){
-           User.create({
-               user_name:req.body.user_name,
-               password: req.body.password,
-               first_name: req.body.first_name,
-               last_name: req.body.last_name,
-               job_title: req.body.job_title,
-               time_stamp: date.getTime()
-           }, function (err, user_data) {
-               if(err) throw err;
-               res.send(user_data);
-           });
-       } else {
-           res.send("Username already exists...please use a different one");
-       }
+    console.log(req.body.password);
+
+    //var type1 = typeof hash_value;
+    //var type2 = typeof salt_value;
+    //console.log(type1);
+    //console.log(type2);
+    hash(req.body.password, function(err, salt, hash) {
+        User.find({user_name: req.body.user_name}, 'user_name first_name last_name job_title', function (err, user_data) {
+            if (err) throw err;
+            if (user_data == "") {
+                User.create({
+                    user_name: req.body.user_name,
+                    first_name: req.body.first_name,
+                    last_name: req.body.last_name,
+                    job_title: req.body.job_title,
+                    time_stamp: date.getTime(),
+                    salt: salt,
+                    hash: hash.toString('base64')
+                }, function (err, user_data) {
+                    if (err) throw err;
+                    res.send(user_data);
+                });
+            } else {
+                res.send("Username already exists...please use a different one");
+            }
+        });
     });
 });
 
@@ -96,7 +161,15 @@ router.post('/update', function(req, res) {
  */
 router.post('/update/password', function(req, res) {
     console.log("PASSWORD");
-    User.update({user_name: req.body.user_name}, {password: req.body.password}, function(err, user_data) {
+    User.update({user_name: req.body.user_name},
+        {hash: hash(req.body.password, function(err, hash){
+        if (err) throw err;
+        return hash.toString();
+    })},
+        {salt: hash(req.body.password, function(err, salt){
+        if (err) throw err;
+        return salt;
+    })}, function(err, user_data) {
         if(err) throw err;
         res.send(user_data);
     });
