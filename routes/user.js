@@ -46,8 +46,8 @@ router.get('/', function(req, res) {
  * HTTP GET: /user/:user_name
  * Return a user by 'user_name'
  */
-router.get('/:username', function(req, res) {
-    User.find({user_name: req.params.username}, 'user_name first_name last_name job_title', function(err, user_data) {
+router.get('/:user_name', function(req, res) {
+    User.find({user_name: req.params.user_name}, 'user_name first_name last_name job_title', function(err, user_data) {
         if(err) throw err;
         res.send(user_data);
     });
