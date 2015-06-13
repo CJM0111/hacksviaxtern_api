@@ -68,7 +68,6 @@ router.post('/new', function(req, res) {
     var date = new Date();
     Claim.find({user_name: req.body.user_name}).sort('-claim_id').exec(function(err, claim_data, local_claim_id){
         if (err) throw err;
-        console.log(claim_data);
         if(claim_data == ""){
             local_claim_id = 1;
         }
