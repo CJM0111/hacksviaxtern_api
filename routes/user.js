@@ -99,18 +99,11 @@ router.post('/update', function(req, res) {
  * Update an existing user's password
  */
 router.post('/update/password', function(req, res) {
-    console.log("PASSWORD");
-    User.update({user_name: req.body.user_name},
-        {hash: hash(req.body.password, function(err, hash){
-        if (err) throw err;
-        return hash.toString();
-    })},
-        {salt: hash(req.body.password, function(err, salt){
-        if (err) throw err;
-        return salt;
-    })}, function(err, user_data) {
-        if(err) throw err;
-        res.send(user_data);
+    hash(req.body.password, function(err, salt, hash) {
+        User.update({user_name: req.body.user_name}, {salt: salt, hash: hash.toString('base64')}, function (err, user_data) {
+                if (err) throw err;
+                res.send(user_data);
+            });
     });
 });
 

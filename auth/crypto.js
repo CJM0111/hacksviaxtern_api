@@ -14,7 +14,7 @@ exports.hash = function (password, salt, func) {
         crypto.pbkdf2(password, salt, iterations, length, func);
     } else {
         func = salt;
-        crypto.randomBytes(len, function(err, salt){
+        crypto.randomBytes(length, function(err, salt){
             if (err) return func(err);
             salt = salt.toString('base64');
             crypto.pbkdf2(password, salt, iterations, length, function(err, hash){
