@@ -14,6 +14,7 @@ var claimSchema = new mongoose.Schema({
     end_mileage: Number,
     month: Number,
     day: Number,
+    year: Number,
     from_coordinate: String,
     to_coordinate: String,
     from_location: String,
