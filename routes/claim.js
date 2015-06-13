@@ -91,7 +91,7 @@ router.post('/new', function(req, res) {
             claim_status: 'Pending',
             claim_title: req.body.claim_title,
             nature_of_business: req.body.nature_of_business,
-            license_number: req.body.license_number,
+            license_plate_number: req.body.license_plate_number,
             start_mileage: req.body.start_mileage,
             end_mileage: req.body.end_mileage,
             month: month,

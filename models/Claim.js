@@ -9,7 +9,7 @@ var claimSchema = new mongoose.Schema({
     claim_status: String,
     claim_title: String,
     nature_of_business: String,
-    license_number: String,
+    license_plate_number: String,
     start_mileage: Number,
     end_mileage: Number,
     month: Number,

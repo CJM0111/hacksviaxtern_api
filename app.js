@@ -17,24 +17,11 @@ var multer = require('multer');
 var expressSession = require('express-session');
 
 /**
- * Temporary views to visualize the API data
- */
-var handlebars = require('express-handlebars')
-.create({ defaultLayout:'main' });
-
-/**
  * Mongoose ORM for MongoDB
  */
 mongoose.connect('mongodb://localhost/myIPS')
 
 var app = express();
-
-/**
- * Temporary views to visualize the API data
- */
-app.engine('handlebars', handlebars.engine);
-app.set('view engine', 'handlebars');
-
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
@@ -58,7 +45,7 @@ app.use(methodOverride(function(req) {
 
 /**
  * Authentication
- */
+ *//*
 app.use(function(req, res, next){
     var err = req.session.error
     var msg = req.session.success;
@@ -68,11 +55,12 @@ app.use(function(req, res, next){
     if (err) res.locals.message = 'Error: ' + err;
     if (msg) res.locals.message = 'Success: ' + msg;
     next();
-});
+});*/
 
 /**
  * Set the routes used by the API
  */
+var admin = require('./routes/admin');
 var claim = require('./routes/claim');
 var tracking = require('./routes/tracking');
 var user = require('./routes/user');
@@ -80,6 +68,7 @@ var user = require('./routes/user');
 /**
  * Use the set routes
  */
+app.use('/admin', admin);
 app.use('/claim', claim);
 app.use('/tracking', tracking);
 app.use('/user', user);
