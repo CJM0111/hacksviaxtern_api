@@ -12,6 +12,7 @@
     "express-session": "latest",
     "express-handlebars": "^1.2.0",
     "geocoder": "latest",
+    "jsonwebtoken": "latest",
     "method-override": "*",
     "mongoose": "latest",
     "multer": "^0.1.8",

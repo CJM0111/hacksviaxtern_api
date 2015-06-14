@@ -44,18 +44,18 @@ app.use(methodOverride(function(req) {
 }))
 
 /**
- * Authentication
- *//*
-app.use(function(req, res, next){
-    var err = req.session.error
-    var msg = req.session.success;
-    delete req.session.error;
-    delete req.session.success;
-    res.locals.message = '';
-    if (err) res.locals.message = 'Error: ' + err;
-    if (msg) res.locals.message = 'Success: ' + msg;
-    next();
-});*/
+ * Optional: Session Authentication
+ */
+//app.use(function(req, res, next){
+//    var err = req.session.error
+//    var msg = req.session.success;
+//    delete req.session.error;
+//    delete req.session.success;
+//    res.locals.message = '';
+//    if (err) res.locals.message = 'Error: ' + err;
+//    if (msg) res.locals.message = 'Success: ' + msg;
+//    next();
+//});
 
 /**
  * Set the routes used by the API
@@ -68,10 +68,10 @@ var user = require('./routes/user');
 /**
  * Use the set routes
  */
+app.use('/user', user);
 app.use('/admin', admin);
 app.use('/claim', claim);
 app.use('/tracking', tracking);
-app.use('/user', user);
 
 /**
  * Handle 404 & 500 errors

@@ -5,6 +5,7 @@ var mongoose = require('mongoose');
 
 var adminSchema = new mongoose.Schema({
     admin_user_name: String,
+    role: String,
     salt: String,
     hash: String
 });
