@@ -11,33 +11,11 @@ var router = express.Router();
 var User = require('../models/User.js');
 
 /**
- * HTTP POST: /user/login
- * Validate user
- */
-router.post('/bad_login', function(req, res) {
-    User.find({user_name: req.body.user_name}, 'user_name password', function (err, user_data) {
-        if (err) throw err;
-        if (user_data.length) {
-            if(user_data[0].password === req.body.password){
-                res.send("Valid credentials");
-            }
-            else{
-                res.send("Invalid password");
-            }
-        }
-        else{
-            res.send("Invalid username or password");
-        }
-        console.log("Password: " + user_data[0].password);
-    });
-});
-
-/**
  * HTTP GET: /user/
  * Return all users
  */
 router.get('/', function(req, res) {
-    User.find({}, 'user_name first_name last_name job_title', function (err, user_data) {
+    User.find({}, 'user_name first_name last_name job_title employee_id drivers_license street_address city state zip_code', function (err, user_data) {
         if(err) throw err;
         res.send(user_data);
     });
@@ -48,7 +26,18 @@ router.get('/', function(req, res) {
  * Return a user by 'user_name'
  */
 router.get('/:user_name', function(req, res) {
-    User.find({user_name: req.params.user_name}, 'user_name first_name last_name job_title', function(err, user_data) {
+    User.find({user_name: req.params.user_name}, 'user_name first_name last_name job_title employee_id drivers_license street_address city state zip_code', function(err, user_data) {
+        if(err) throw err;
+        res.send(user_data);
+    });
+});
+
+/**
+ * HTTP GET: /user/employee_id/:employee_id
+ * Return a user by 'employee_id'
+ */
+router.get('/employee_id/:employee_id', function(req, res) {
+    User.find({employee_id: req.params.employee_id}, 'user_name first_name last_name job_title employee_id drivers_license street_address city state zip_code', function(err, user_data) {
         if(err) throw err;
         res.send(user_data);
     });
@@ -61,7 +50,7 @@ router.get('/:user_name', function(req, res) {
 router.post('/new', function(req, res) {
     var date = new Date();
     hash(req.body.password, function(err, salt, hash) {
-        User.find({user_name: req.body.user_name}, 'user_name first_name last_name job_title', function (err, user_data) {
+        User.find({user_name: req.body.user_name}, 'user_name first_name last_name job_title employee_id drivers_license street_address city state zip_code', function (err, user_data) {
             if (err) throw err;
             if (user_data == "") {
                 User.create({
@@ -69,6 +58,12 @@ router.post('/new', function(req, res) {
                     first_name: req.body.first_name,
                     last_name: req.body.last_name,
                     job_title: req.body.job_title,
+                    employee_id: req.body.employee_id,
+                    drivers_license: req.body.drivers_license,
+                    street_address: req.body.street_address,
+                    city: req.body.city,
+                    state: req.body.state,
+                    zip_code: req.body.zip_code,
                     time_stamp: date.getTime(),
                     salt: salt,
                     hash: hash.toString('base64')
@@ -88,7 +83,7 @@ router.post('/new', function(req, res) {
  * Update an existing user
  */
 router.post('/update', function(req, res) {
-    User.update({user_name: req.body.user_name}, {first_name: req.body.first_name, last_name: req.body.last_name, job_title: req.body.job_title}, function(err, user_data) {
+    User.update({user_name: req.body.user_name}, {first_name: req.body.first_name, last_name: req.body.last_name, job_title: req.body.job_title, employee_id: req.body.employee_id, drivers_license: req.body.drivers_license, street_address: req.body.street_address, city: req.body.city, state: req.body.state, zip_code: req.body.zip_code}, function(err, user_data) {
         if(err) throw err;
         res.send(user_data);
     });
@@ -112,16 +107,17 @@ router.post('/update/password', function(req, res) {
  * Uses 'crypto.js' for encryption & decryption
  */
 function authenticate(user_name, password, func) {
+    // FOR TESTING PURPOSES ONLY
     console.log('Authenticating %s:%s', user_name, password);
     User.find({user_name: user_name}, 'user_name hash salt', function(err, user_data) {
         if(err) return err;
-        if (!user_data[0].user_name) {
+        if (user_data == "") {
             return func(new Error('User not found...'));
         }
         else{
             hash(password, user_data[0].salt, function(err, hash){
                 if (err) return func(err);
-                if (hash.toString('base64') == user_data[0].hash.toString('base64')) return func(null, user_data);
+                if (hash.toString('base64') === user_data[0].hash.toString('base64')) return func(null, user_data);
                 func(new Error('Invalid password...'));
             })
         }
