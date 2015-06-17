@@ -1,10 +1,9 @@
-HacksViaXtern API
+#HacksViaXtern API
 
-API Author: Chris McDonald
+######API Author: Chris McDonald
 
-Dependencies:
-Node.js/Express/Mongoose/MongoDB/ngrok
+####Stack: Node.js/Express/Mongoose/MongoDB/ngrok
 
-Install node modules using 'npm install -g'
+####Install node modules using 'npm install -g'
 
-Modify dependencies inside 'package.json'
+####Modify dependencies inside 'package.json'
