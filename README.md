@@ -6,4 +6,4 @@
 
 ####Install node modules using 'npm install -g'
 
-####Modify dependencies inside 'package.json'
+####Modify dependencies inside the 'package.json' file
